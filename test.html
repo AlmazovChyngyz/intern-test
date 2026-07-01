@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>40 Question IT Quiz</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; padding-top: 40px; }
+.question { margin-bottom: 15px; padding: 10px; border-bottom: 1px solid #ddd; }
+.timer { font-size: 20px; font-weight: bold; color: darkred; position: fixed; top: 10px; right: 20px; background: #fff; padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; }
+button { padding: 10px 15px; margin-top: 20px; cursor: pointer; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.question.correct { background: #e6ffed; border-left: 4px solid #2ecc71; padding-left: 10px; }
+.question.incorrect { background: #ffecec; border-left: 4px solid #e74c3c; padding-left: 10px; }
+.correct-answer-note { font-weight: bold; color: #2ecc71; }
+.your-answer-note { font-weight: bold; color: #e74c3c; }
+#results {
+  display: none;
+  margin-top: 20px;
+  padding: 15px;
+  border: 2px solid #333;
+  border-radius: 6px;
+  background: #f9f9f9;
+}
+#results h2 { margin-top: 0; }
+#resultsSummary { font-size: 18px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div class="timer" id="timer">40:00</div>
+
+<h1>IT Knowledge Quiz (40 Questions)</h1>
+
+<div id="results">
+  <h2>Quiz Results</h2>
+  <div id="resultsSummary"></div>
+</div>
+
+<form id="quizForm">
+
+<div id="quiz"></div>
+
+<button type="button" id="submitBtn" onclick="submitQuiz()">Submit</button>
+</form>
+
+<script>
+const questions = [
+  // Networking (10)
+  {cat:"Networking", q:"What does TCP SYN flag do?", a:["Gracefully close a connection","Initiate a new connection","Acknowledge received data","Reset an existing connection"], c:1},
+  {cat:"Networking", q:"MTU refers to?", a:["Maximum Transmission Unit","Minimum Transfer Unit","Managed Transport Uplink","Multiplexed Traffic Unit"], c:0},
+  {cat:"Networking", q:"A stateful firewall makes decisions based on?", a:["Source IP address only","Connection/session state","MAC address only","Packet size only"], c:1},
+  {cat:"Networking", q:"A recursive DNS query means?", a:["The client fully resolves the name itself","The server resolves it fully on the client's behalf","No resolution is attempted","Only cached results are ever returned"], c:1},
+  {cat:"Networking", q:"NAT PAT (Port Address Translation) is mainly used to?", a:["Encrypt outbound traffic","Let many internal hosts share one public IP via ports","Prevent routing loops","Perform DNS lookups"], c:1},
+  {cat:"Networking", q:"ARP spoofing primarily manipulates?", a:["Layer 2 IP-to-MAC mappings","DNS records","TCP port assignments","SSL/TLS certificates"], c:0},
+  {cat:"Networking", q:"The main purpose of a VLAN is to?", a:["Logically segment a network without new cabling","Encrypt traffic between sites","Scan for viruses on the wire","Allocate disk volumes"], c:0},
+  {cat:"Networking", q:"TTL in an IP packet is used to?", a:["Limit how long/far a packet can travel before being dropped","Encrypt the payload","Specify the TCP window size","Track total bytes transferred"], c:0},
+  {cat:"Networking", q:"IP fragmentation typically occurs when?", a:["A packet exceeds the outgoing link's MTU","DNS resolution fails","Authentication fails","A route is unreachable"], c:0},
+  {cat:"Networking", q:"Asymmetric routing means?", a:["Traffic takes the same path in both directions","Traffic takes different paths to and from a destination","No route exists between hosts","Traffic loops back to the sender"], c:1},
+
+  // Windows & Linux Events (10)
+  {cat:"Windows & Linux", q:"Windows Event ID 4624 indicates?", a:["A failed logon attempt","A successful logon","A user account was deleted","A new process started"], c:1},
+  {cat:"Windows & Linux", q:"Windows Event ID 4625 indicates?", a:["A successful logon","A failed logon attempt","A firewall rule was blocked","A service was stopped"], c:1},
+  {cat:"Windows & Linux", q:"Windows Event ID 4688 logs?", a:["A new process was created","A user logged on","A file was deleted","A DNS query was made"], c:0},
+  {cat:"Windows & Linux", q:"Windows Event ID 4720 indicates?", a:["A user account was created","A group was deleted","A logon failure","A service started"], c:0},
+  {cat:"Windows & Linux", q:"Sysmon is primarily used for?", a:["Filtering inbound email","Detailed system activity logging","Full-disk encryption","Establishing VPN tunnels"], c:1},
+  {cat:"Windows & Linux", q:"On Linux, auth.log (or secure log) primarily records?", a:["Kernel panic messages","Authentication and authorization events","DNS cache entries","Firewall rule changes"], c:1},
+  {cat:"Windows & Linux", q:"The 'sudo' command is used to?", a:["Scan the local network","Run a command with elevated (root) privileges","Compress files","Resolve DNS names"], c:1},
+  {cat:"Windows & Linux", q:"SSH is primarily used to provide?", a:["Secure encrypted remote access/login","Automated file backups","DNS name resolution","Dynamic IP routing"], c:0},
+  {cat:"Windows & Linux", q:"On modern Linux, systemd is primarily responsible for?", a:["Managing processes, services, and boot sequence","Managing firewall rules only","Managing user accounts only","Managing disk partitions only"], c:0},
+  {cat:"Windows & Linux", q:"journald primarily stores?", a:["System and service logs", "DNS zone files","User account records","Raw network packets"], c:0},
+
+  // Incident Response (10)
+  {cat:"Incident Response", q:"A brute force attack is best described as?", a:["A single carefully guessed password attempt","Rapidly trying many password guesses against one account","Encrypting a victim's files for ransom","Adding a new firewall rule"], c:1},
+  {cat:"Incident Response", q:"Password spraying is characterized by?", a:["Trying one common password across many accounts","Trying many passwords against one account","Never attempting authentication","Only cracking password hashes offline"], c:0},
+  {cat:"Incident Response", q:"Beaconing in malware analysis refers to?", a:["Regular, periodic check-ins to a C2 server","Scheduled backup synchronization","A routine DNS record update","Automatic patch installation"], c:0},
+  {cat:"Incident Response", q:"DNS tunneling is a technique used to?", a:["Smuggle data in/out disguised as DNS queries","Bypass a firewall using ICMP","Deliver a phishing email","Establish a legitimate VPN session"], c:0},
+  {cat:"Incident Response", q:"Lateral movement refers to an attacker?", a:["Moving between systems inside a compromised network","Exiting the network with stolen data","Encrypting files for ransom","Scanning external ports from outside"], c:0},
+  {cat:"Incident Response", q:"Persistence, in attacker terminology, means?", a:["Maintaining long-term access after initial compromise","Exiting the system immediately after access","Restoring from a backup","Installing routine OS patches"], c:0},
+  {cat:"Incident Response", q:"Ransomware's primary action is to?", a:["Silently delete security logs","Encrypt victim data and demand payment","Open additional network ports","Automatically patch the OS"], c:1},
+  {cat:"Incident Response", q:"Data exfiltration refers to?", a:["Unauthorized transfer of data out of a network","Routine backup of data to cloud storage","Deduplication of stored data","Compressing files to save space"], c:0},
+  {cat:"Incident Response", q:"Privilege escalation means an attacker?", a:["Gains lower, more restricted access","Gains higher-level access than originally granted","Loses network connectivity","Fails to authenticate"], c:1},
+  {cat:"Incident Response", q:"A web shell is best described as?", a:["A malicious script giving remote control via a web server","A firewall configuration rule","A dedicated DNS server","A legitimate user account"], c:0},
+
+  // QRadar (10)
+  {cat:"QRadar", q:"In QRadar, CRE stands for?", a:["Custom Rules Engine","Central Response Engine","Cyber Risk Evaluator","Core Routing Engine"], c:0},
+  {cat:"QRadar", q:"An Offense in QRadar represents?", a:["A correlated grouping of related alerts/events","A single raw firewall log line","A user login record","A raw network flow"], c:0},
+  {cat:"QRadar", q:"Building Blocks in QRadar are best described as?", a:["Reusable logical rule components used by other rules","Stored raw log files","User account templates","Physical appliance modules"], c:0},
+  {cat:"QRadar", q:"A Reference Set in QRadar is used to?", a:["Store and check dynamic lists of data (e.g. known-bad IPs)","Archive raw firewall logs","Store user account credentials","Buffer network packets"], c:0},
+  {cat:"QRadar", q:"DSM in QRadar stands for?", a:["Device Support Module","Data Security Manager","Dynamic Session Monitor","DNS Sync Module"], c:0},
+  {cat:"QRadar", q:"The Ariel database/search in QRadar is used to?", a:["Search stored events and flows","Create new user accounts","Configure firewall rules","Schedule system backups"], c:0},
+  {cat:"QRadar", q:"EPS in QRadar terminology stands for?", a:["Events Per Second","Encryption Per Session","Errors Per Second","External Packet Sync"], c:0},
+  {cat:"QRadar", q:"Log Sources in QRadar refer to?", a:["Systems/devices that send data into QRadar for collection","User accounts with admin access","Correlation rules","Existing offenses"], c:0},
+  {cat:"QRadar", q:"Rules in QRadar are primarily used to?", a:["Detect conditions/patterns across incoming data","Permanently store raw logs","Block network traffic directly","Encrypt stored data"], c:0},
+  {cat:"QRadar", q:"The key difference between Flows and Events in QRadar is?", a:["Flows describe network traffic; Events describe discrete log records","They are the same data, just labeled differently","Flows are user records; Events are firewall rules","Flows are offenses; Events are rules"], c:0}
+];
+
+const quizDiv = document.getElementById("quiz");
+
+questions.forEach((item, index) => {
+  let html = `<div class='question' id='q-${index}'><p>${index+1}. ${item.q}</p>`;
+  item.a.forEach((ans, i) => {
+    html += `<label><input type='radio' name='q${index}' value='${i}'> ${ans}</label><br>`;
+  });
+  html += `</div>`;
+  quizDiv.innerHTML += html;
+});
+
+// Timer
+let time = 40 * 60;
+const timerEl = document.getElementById("timer");
+let quizSubmitted = false;
+
+const timerInterval = setInterval(() => {
+  let min = Math.floor(time / 60);
+  let sec = time % 60;
+  timerEl.innerText = `${min}:${sec < 10 ? "0"+sec : sec}`;
+  time--;
+  if(time < 0){
+    clearInterval(timerInterval);
+    submitQuiz();
+  }
+}, 1000);
+
+function submitQuiz(){
+  // Prevent double submission
+  if (quizSubmitted) return;
+  quizSubmitted = true;
+
+  clearInterval(timerInterval);
+
+  let score = 0;
+  let answeredCount = 0;
+  const categoryStats = {};
+
+  questions.forEach((item, index) => {
+    const selected = document.querySelector(`input[name='q${index}']:checked`);
+    const questionDiv = document.getElementById(`q-${index}`);
+    const isCorrect = selected && parseInt(selected.value, 10) === item.c;
+
+    if (selected) answeredCount++;
+    if (isCorrect) score++;
+
+    if (!categoryStats[item.cat]) {
+      categoryStats[item.cat] = { correct: 0, total: 0 };
+    }
+    categoryStats[item.cat].total++;
+    if (isCorrect) categoryStats[item.cat].correct++;
+
+    questionDiv.classList.add(isCorrect ? "correct" : "incorrect");
+
+    // Show correct answer / user's answer beneath the question
+    const note = document.createElement("p");
+    if (isCorrect) {
+      note.innerHTML = `<span class="correct-answer-note">&#10003; Correct: ${item.a[item.c]}</span>`;
+    } else if (selected) {
+      note.innerHTML = `<span class="your-answer-note">&#10007; Your answer: ${item.a[parseInt(selected.value, 10)]}</span><br>` +
+                        `<span class="correct-answer-note">Correct answer: ${item.a[item.c]}</span>`;
+    } else {
+      note.innerHTML = `<span class="your-answer-note">&#10007; Not answered</span><br>` +
+                        `<span class="correct-answer-note">Correct answer: ${item.a[item.c]}</span>`;
+    }
+    questionDiv.appendChild(note);
+
+    // Lock in the answers so nothing can change after submission
+    document.querySelectorAll(`input[name='q${index}']`).forEach(input => {
+      input.disabled = true;
+    });
+  });
+
+  // Disable submit button
+  document.getElementById("submitBtn").disabled = true;
+
+  // Show results summary
+  const percentage = ((score / questions.length) * 100).toFixed(1);
+  const resultsDiv = document.getElementById("results");
+  const summaryDiv = document.getElementById("resultsSummary");
+
+  let categoryRows = "";
+  Object.keys(categoryStats).forEach(cat => {
+    const stats = categoryStats[cat];
+    const catPct = ((stats.correct / stats.total) * 100).toFixed(0);
+    categoryRows += `<tr><td style="padding:4px 12px 4px 0;">${cat}</td>` +
+      `<td style="padding:4px 12px;">${stats.correct} / ${stats.total}</td>` +
+      `<td style="padding:4px 0;">${catPct}%</td></tr>`;
+  });
+
+  summaryDiv.innerHTML =
+    `Score: <strong>${score} / ${questions.length}</strong> (${percentage}%)<br>` +
+    `Answered: ${answeredCount} / ${questions.length}` +
+    `<table style="margin-top:12px; border-collapse:collapse;">` +
+    `<tr><th style="text-align:left; padding:4px 12px 4px 0;">Category</th><th style="text-align:left; padding:4px 12px;">Correct</th><th style="text-align:left; padding:4px 0;">%</th></tr>` +
+    categoryRows +
+    `</table>`;
+  resultsDiv.style.display = "block";
+
+  // Scroll to top so the intern sees their results immediately
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+</script>
+
+</body>
+</html>
